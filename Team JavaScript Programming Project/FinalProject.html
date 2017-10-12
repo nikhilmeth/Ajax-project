@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<!--
+	Nikhilesh Methuku & Mohammed Jaffer Ali
+	OMIS 694 Java Scripting
+	Submitted on May 11, 2017
+	HTML script to create a bar chart report for Green Electric Company providing summary of electric usage for its residential customers
+-->
+<html>
+<head>
+	<title>Electricity Usage</title>
+	<style>
+		body {
+			font-family: Arial;
+		}
+	</style>
+	<!-- including the script -->
+	<script src="myAjaxLib.js"></script>
+	<script>
+		//defining the variables for the canvas context and text-lines to store the values returned from server
+		var context;	
+		var lineNumber=0;
+		var text_lines;
+		//function to set the graph passing the maximum scale value
+		function createGraph(max) {
+			context.fillStyle = "#000000"; // Black
+			context.font = "20px Arial";
+			ylabel = new Array("J","F","M","A","M","J","J","A","S","O","N","D"); //initializing array for y-axis label with month values		
+			//inititate a loop to put in the labels from the array
+			for(var i=0;  i<ylabel.length; i++) {
+				context.fillText(ylabel[i], 10, (40*(i+1))+30);		
+			}
+			context.strokeRect(50, 30, 500, 0);
+			context.strokeRect(50, 530, 500, 0);
+			context.fillText("kWh", 280, 580);
+			// to draw the 5 vertical grid lines in the canvas
+			for(i=0; i<=500; i+=100) {
+				context.strokeRect(50+i, 30, 0, 500);
+			}
+			// to draw the horizontal scale values on basis of maximum scale (kWh)
+			for(i = 0; i<=500; i+=100) {			
+			context.fillText(" ", 35+i, 560);
+			// if maximum value is less than 500, the scale is adjusted with an increment by 100
+			if(max < 500)
+			context.fillText(i, 35+i, 560);
+			// else if maximum value is less than 1000, the scale is adjusted with an increment by 200
+			else if(max < 1000)
+			context.fillText(i*2, 35+i, 560);
+			// else if maximum value is less than 1500, the scale is adjusted with an increment by 300
+			else if(max < 1500)
+			context.fillText(i*3, 35+i, 560);
+			// else if maximum value is less than 2000, the scale is adjusted with an increment by 400
+			else if(max < 2000)
+			context.fillText(i*4, 35+i, 560);
+			// else if maximum value is less than 2500, the scale is adjusted with an increment by 500			
+			else if(max < 2500)
+			context.fillText(i*5, 35+i, 560);
+			// else if maximum value is less than 5000, the scale is adjusted with an increment by 1000
+			else if(max < 5000)
+			context.fillText(i*10, 35+i, 560);
+			// else if maximum value is less than 10000, the scale is adjusted with an increment by 2000			
+			else if(max < 10000)
+			context.fillText(i*20, 35+i, 560);
+			}	
+		}
+		// the function to display the bar graph 
+		function displayGraph(returnedXMLdata) {
+		//  prototype functions to get the maximum value of elements in an array
+		Array.prototype.max = function () {
+			return Math.max.apply(Math, this);
+		};
+		// prototype functions to get the minimum value of elements in an array
+		Array.prototype.min = function () {
+			return Math.min.apply(Math, this);
+		};
+		// to store the returned xml data into an array 
+		text_lines = returnedXMLdata.split("\n");
+		// the function to display the chart on click of button next customer chart 	
+		document.getElementById("next").onclick = function() {
+		//condition to check the current line position and reset it to line 1 (line 0 has headers), if it reaches the maximum length of customers
+		if(lineNumber < text_lines.length-2){ 
+			lineNumber = lineNumber + 1;
+			}
+			else{ lineNumber = 1;}
+		// storing the returned xml data into an array 
+		text_lines = returnedXMLdata.split("\n");
+		// storing the returned xml values of a line into an array 		
+		fields = text_lines[lineNumber].split(",");
+		year = fields[0]; //assigning year value to variable
+		name = fields[13];//assigning customer name value to variable
+		context.fillStyle = "#D2B48C";
+		context.font = "20px Arial";
+		//clear of the rectangle - i.e. prepare it for the next bar chart
+		context.clearRect(0,0,10000,10000);
+		//slices the fields array containing elements and stores them in a separate array barValues_Array starting from pos 1 ending at 12
+		barValues_Array = fields.slice(1, 12);
+		var arrayOfNumbers = barValues_Array.map(Number);
+		//storing the maximum and minimum values of the array
+		var max = arrayOfNumbers.max();
+		var min = arrayOfNumbers.min();
+		// printing the bar graph header with customer name
+		context.fillText(year + " Electricity Usage for " + name, 50, 20);
+		// Loop to draw the bar graph rectangles for all the 12 months
+		for (i=1; i< 13; i++){
+		//variable for the electric usage values
+		length = parseInt(fields[i]);
+		//checking the maximum value to identify the multiplier for bar length
+		if(max < 500)
+		context.fillRect(50, 10+(40*i), length, 20);
+		else if(max < 1000)
+		context.fillRect(50, 10+(40*i), length/2, 20);
+		else if(max < 1500)
+		context.fillRect(50, 10+(40*i), length/3, 20);
+		else if(max < 2000)
+		context.fillRect(50, 10+(40*i), length/4, 20);
+		else if(max < 2500)
+		context.fillRect(50, 10+(40*i), length/5, 20);
+		else if(max < 5000)
+		context.fillRect(50, 10+(40*i), length/10, 20);
+		else if(max < 10000)
+		context.fillRect(50, 10+(40*i), length/20, 20);
+		}
+		// calling the graph create function
+		createGraph(max);
+		}} 
+		// on load activities
+		window.onload = function() {
+		    context = elec_usage_Canvas.getContext("2d");
+			doAjax("GreenElectricCoSummaryData.txt", "", "displayGraph", "GET", 0);//ajax function to pull the data from the server
+		}
+	</script>
+</head>
+<body>
+	<center>
+	<h2></h2>
+	<!-- canvas id with width and height-->
+	<canvas id="elec_usage_Canvas" width="650" height="600">
+		<p>Your browser doesn't support the canvas element.</p>
+	</canvas>
+	<!--button to click and move to the next customer usage chart-->
+	<br /><input id="next" type="button" value="Next Customer's Chart">
+	</center>
+</body>
+</html>
